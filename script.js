@@ -37,15 +37,13 @@ async function fetchTeamStats() {
 
         for (const event of events) {
             const eventStartDate = new Date(event.start_date);
-            const eventEndDate = new Date(event.end_date);
 
             if (eventStartDate > today) {
                 html += `
-                    <div class="stats-card future-card">
+                    <div class="stats-card">
                         <h3 style="font-family:var(--robot-font); color:var(--neon-blue);">${event.name}</h3>
                         <p style="margin-top:10px;">📍 ${event.city}, ${event.state_prov}</p>
-                        <p>📅 ${event.start_date}</p>
-                        <p style="color:#888; font-size:0.8rem; margin-top:5px;">[ STATUS: UPCOMING ]</p>
+                        <p>📅 ${event.start_date} [UPCOMING]</p>
                         <div class="external-links">
                             <a href="https://www.thebluealliance.com/event/${event.key}" target="_blank" class="btn-link">TheBlueAlliance</a>
                             <a href="https://www.statbotics.io/event/${event.key}" target="_blank" class="btn-link">Statbotics</a>
@@ -66,10 +64,6 @@ async function fetchTeamStats() {
 
             const teamMatches = matches.filter(m => m.alliances.blue.team_keys.includes(TEAM_KEY) || m.alliances.red.team_keys.includes(TEAM_KEY));
 
-            let pWins = 0;
-            let pLosses = 0;
-            const playoffMatches = teamMatches.filter(m => m.comp_level !== 'qm');
-
             const matchRows = teamMatches
                 .sort((a, b) => a.time - b.time)
                 .map(m => {
@@ -78,33 +72,58 @@ async function fetchTeamStats() {
                     const oppScore = isBlue ? m.alliances.red.score : m.alliances.blue.score;
                     const resultClass = (myScore > oppScore) ? 'win' : (myScore < oppScore ? 'loss' : '');
 
-                    if (m.comp_level !== 'qm' && m.alliances.blue.score !== -1) {
-                        if (myScore > oppScore) pWins++;
-                        else if (myScore < oppScore) pLosses++;
-                    }
+                    let level = m.comp_level.toUpperCase();
+                    // Playoff matches show as SF1-1, QF2-1, etc. Quals show as Q1, Q2.
+                    let displayNum = (level !== 'QM') ? `${m.set_number}-${m.match_number}` : m.match_number;
+                    let levelLabel = level === 'QM' ? 'Q' : level;
 
-                    let levelLabel = m.comp_level === 'qm' ? 'Quals' : 'Playoffs';
-                    let numLabel = m.comp_level === 'qm' ? m.match_number : `${m.set_number}-${m.match_number}`;
-                    return `<span class="match-badge ${resultClass}">${levelLabel} ${numLabel}: ${myScore}-${oppScore}</span>`;
+                    return `<span class="match-badge ${resultClass}">${levelLabel}${displayNum}: ${myScore}-${oppScore}</span>`;
                 }).join('');
 
-            let allianceDisplay = status?.alliance?.name ? status.alliance.name.replace(/Alliance\s+/i, '') : "Unpicked";
+            let finish = "Qualifications Only";
+            let playoffRecord = "0W-0L";
 
-            let finish = "Did not advance to Playoffs";
-            const pStatus = status?.playoff?.status;
+            if (status?.playoff) {
+                const pStatus = status.playoff.status;
+                const pLevel = status.playoff.level;
+                const pWins = status.playoff.record?.wins || 0;
+                const pLosses = status.playoff.record?.losses || 0;
+                playoffRecord = `${pWins}W-${pLosses}L`;
 
-            if (pStatus === 'won') finish = "Event Winner (1st)";
-            else if (pStatus === 'f' || playoffMatches.some(m => m.comp_level === 'f')) finish = "Finalist (2nd)";
-            else if (pStatus === 'sf' || playoffMatches.some(m => m.comp_level === 'sf')) finish = "Semifinalist";
-            else if (pStatus === 'qf' || playoffMatches.some(m => m.comp_level === 'qf')) finish = "Quarterfinalist";
-            else if (status?.alliance?.name && eventEndDate > today) finish = "Playoffs In Progress";
+                if (pStatus === 'won') finish = "Event Winners";
+                else if (pLevel === 'f') finish = "Finalists";
+                else if (pLevel === 'sf') finish = "Semifinalists";
+                else if (pLevel === 'qf') finish = "Quarterfinalists";
+                else finish = "Eliminated";
+            }
+
+            let allianceDisplay = status?.alliance?.name ? status.alliance.name.replace(/Alliance\s+/i, '#') : "Unpicked";
 
             html += `
-                <div class="stats-card"><h3 style="font-family:var(--robot-font); color:var(--neon-blue);">${event.name}</h3><div class="report-grid"><div class="report-section"><h4>QUALIFICATIONS</h4><p>Rank: <strong>${status?.qual?.ranking?.rank || 'N/A'}</strong></p><p>Quals Record: <strong>${status?.qual?.ranking?.record?.wins || 0}W-${status?.qual?.ranking?.record?.losses || 0}L</strong></p></div><div class="report-section"><h4>PLAYOFFS</h4><p>Alliance: <strong>${allianceDisplay}</strong></p><p>Finish: <strong>${finish}</strong></p><p>Playoffs Record: <strong>${pWins}W-${pLosses}L</strong></p></div></div><div class="history-section"><h4>MATCH HISTORY</h4><div class="match-scroll">${matchRows || 'Data pending...'}</div></div>${awards.length > 0 ? awards.map(a => `<div class="award-tag">🏆 ${a.name}</div>`).join('') : ''}<div class="external-links"><a href="https://www.thebluealliance.com/event/${event.key}" target="_blank" class="btn-link">TheBlueAlliance</a><a href="https://www.statbotics.io/event/${event.key}" target="_blank" class="btn-link">Statbotics</a></div></div>`;
+                <div class="stats-card">
+                    <h3 style="font-family:var(--robot-font); color:var(--neon-blue);">${event.name}</h3>
+                    <div class="report-grid">
+                        <div class="report-section">
+                            <h4>QUALIFICATIONS</h4>
+                            <p>Rank: <strong>${status?.qual?.ranking?.rank || 'N/A'}</strong></p>
+                            <p>Record: <strong>${status?.qual?.ranking?.record?.wins || 0}W-${status?.qual?.ranking?.record?.losses || 0}L</strong></p>
+                        </div>
+                        <div class="report-section">
+                            <h4>PLAYOFFS</h4>
+                            <p>Alliance: <strong>${allianceDisplay}</strong></p>
+                            <p>Finish: <strong>${finish} (${playoffRecord})</strong></p>
+                        </div>
+                    </div>
+                    <div class="match-scroll">${matchRows || 'No match data...'}</div>
+                    ${awards.length > 0 ? awards.map(a => `<div class="award-tag">🏆 ${a.name}</div>`).join('') : ''}
+                    <div class="external-links">
+                        <a href="https://www.thebluealliance.com/event/${event.key}" target="_blank" class="btn-link">TheBlueAlliance</a>
+                        <a href="https://www.statbotics.io/event/${event.key}" target="_blank" class="btn-link">Statbotics</a>
+                    </div>
+                </div>`;
         }
-        container.innerHTML = html || '<p>No data found.</p>';
+        container.innerHTML = html || '<p>No mission logs found.</p>';
     } catch (err) {
-        console.error("TBA Error:", err);
-        container.innerHTML = '<p style="color:red">CRITICAL: CONNECTION TO DATA HUB FAILED</p>';
+        container.innerHTML = '<p style="color:red">CONNECTION ERROR</p>';
     }
 }
