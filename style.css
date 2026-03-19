@@ -10,7 +10,6 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body { background-color: var(--black); color: var(--white); font-family: 'Rajdhani', sans-serif; overflow-x: hidden; line-height: 1.6; }
 
 .navbar { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: rgba(5, 5, 5, 0.95); border-bottom: 2px solid var(--royal-blue); position: sticky; top: 0; z-index: 1000; }
@@ -19,7 +18,7 @@ body { background-color: var(--black); color: var(--white); font-family: 'Rajdha
 
 .nav-links { display: flex; list-style: none; }
 .nav-links li { margin: 0 15px; }
-.nav-links a { text-decoration: none; color: var(--white); font-family: var(--robot-font); font-size: 0.8rem; transition: 0.3s; opacity: 0.7; }
+.nav-links a { text-decoration: none; color: var(--white); font-family: var(--robot-font); font-size: 0.8rem; transition: 0.3s; opacity: 0.7; cursor: pointer; }
 .nav-links a.active { opacity: 1; color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-blue); }
 
 .container { padding: 4rem 10%; }
