@@ -5,14 +5,16 @@ const CURRENT_YEAR = new Date().getFullYear();
 function showSection(sectionId) {
     const sections = document.querySelectorAll('.content-section');
     sections.forEach(sec => sec.style.display = 'none');
-    document.getElementById(sectionId).style.display = 'block';
+
+    const target = document.getElementById(sectionId);
+    if (target) target.style.display = 'block';
 
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => item.classList.remove('active'));
 
-    if (window.event && window.event.currentTarget) {
-        window.event.currentTarget.classList.add('active');
-    }
+    // Updated logic to find and highlight the correct link
+    const activeLink = Array.from(navItems).find(item => item.getAttribute('onclick').includes(sectionId));
+    if (activeLink) activeLink.classList.add('active');
 
     if (sectionId === 'stats') {
         fetchTeamStats();
@@ -21,6 +23,8 @@ function showSection(sectionId) {
 
 async function fetchTeamStats() {
     const container = document.getElementById('stats-container');
+    if (!container) return;
+
     container.innerHTML = '<p>RECALLING MISSION ARCHIVES...</p>';
 
     try {
@@ -63,7 +67,10 @@ async function fetchTeamStats() {
             const matches = await matchesRes.json();
             const awards = await awardsRes.json();
 
-            const teamMatches = matches.filter(m => m.alliances.blue.team_keys.includes(TEAM_KEY) || m.alliances.red.team_keys.includes(TEAM_KEY));
+            const teamMatches = matches.filter(m =>
+                m.alliances.blue.team_keys.includes(TEAM_KEY) ||
+                m.alliances.red.team_keys.includes(TEAM_KEY)
+            );
 
             let pWins = 0;
             let pLosses = 0;
