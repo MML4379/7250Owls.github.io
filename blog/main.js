@@ -82,8 +82,22 @@ async function fetchData() {
 }
 
 
+async function updateAuthButton() {
+    const { data: { user } } = await _supabase.auth.getUser();
+    const logoutBtn = document.getElementById('signout');
+    if (user) {
+        logoutBtn.textContent = 'Sign Out';
+        logoutBtn.onclick = logout;
+    } else {
+        logoutBtn.textContent = 'Sign In';
+        logoutBtn.onclick = () => { window.location.hash = '#login'; };
+    }
+}
+
 window.addEventListener('hashchange', async () => {
     const hash = window.location.hash;
+
+    await updateAuthButton();
 
     if (hash === '#upload') {
         const { data: { user } } = await _supabase.auth.getUser();
@@ -108,6 +122,8 @@ window.addEventListener('hashchange', async () => {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
+    await updateAuthButton();
+
     const hash = window.location.hash;
 
     if (hash === '#upload') {
@@ -127,10 +143,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetchData();
     }
 });
-
 async function logout() {
     const { error } = await _supabase.auth.signOut();
-
     if (error) {
         alertPopups(`Error logging out: ${error.message}`);
     } else {
@@ -175,16 +189,3 @@ function renderContent(post, indexPage) {
         return text + (i < parts.length - 1 ? image : '');
     }).join('');
 }
-
-document.addEventListener('DOMContentLoaded', async () => {
-    const { data: { user } } = await _supabase.auth.getUser();
-    const logoutBtn = document.getElementById('signout');
-
-    if (user) {
-        logoutBtn.textContent = 'Sign Out';
-        logoutBtn.onclick = logout;
-    } else {
-        logoutBtn.textContent = 'Sign In';
-        logoutBtn.onclick = () => { window.location.hash = '#login'; };
-    }
-});

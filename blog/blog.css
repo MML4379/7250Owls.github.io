@@ -435,6 +435,7 @@
   transition: 0.3s;
   letter-spacing: inherit;
   text-decoration: none;
+  text-transform: uppercase;
 }
 #signout:hover {
   opacity: 1;
