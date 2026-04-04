@@ -2,14 +2,6 @@ import { alertPopups } from './main.js';
 
 let imageCount = 0;
 
-function renumberImages() {
-    const rows = document.querySelectorAll('.image-input-row');
-    rows.forEach((row, i) => {
-        row.querySelector('.image-input-label').textContent = `Image ${i + 1}`;
-    });
-    imageCount = rows.length;
-}
-
 async function compressImage(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -21,8 +13,10 @@ async function compressImage(file) {
                 const scale = Math.min(1, maxWidth / img.width);
                 canvas.width = img.width * scale;
                 canvas.height = img.height * scale;
+
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
                 canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.8);
             };
             img.src = e.target.result;
@@ -33,10 +27,12 @@ async function compressImage(file) {
 
 export async function pageLoad(supabase) {
     const container = document.getElementById('container');
+
     container.innerHTML = `
     <form class="upload-container" id="upload-form">
         <input type="text" id="blogPath" placeholder="Blog Path">
         <input type="text" id="blogTitle" placeholder="Blog Title">
+
         <select id="blogGenre">
             <option value="" disabled selected>Select Genre</option>
             <option value="Mechanical">Mechanical</option>
@@ -47,106 +43,112 @@ export async function pageLoad(supabase) {
             <option value="Competition">Competition</option>
             <option value="Other">Other</option>
         </select>
-        <textarea id="blogContent" placeholder="Use [image1], [image2], etc. where images should appear."></textarea>
-        <div id="image-inputs"></div>
-        <button type="button" id="add-image-btn">+ Add Image</button>
-        <button type="submit">Submit</button>
-    </form>`;
 
-    document.getElementById('add-image-btn').addEventListener('click', () => {
-        imageCount++;
-        const div = document.createElement('div');
-        div.className = 'image-input-row';
-        div.innerHTML = `
-        <span class="image-input-label">Image ${imageCount}</span>
-        <div class="image-input-controls">
-            <label class="file-input-btn">
-                Choose File
-                <input type="file" class="blog-image-input" accept="image/*">
-            </label>
-            <span class="file-name-display">No file chosen</span>
-            <button type="button" class="remove-image-btn">✕</button>
+        <div class="editor-toolbar">
+            <button type="button" id="add-image-btn">🖼 Insert Image</button>
         </div>
-        <img class="image-preview" style="display:none;">
-        `;
 
-        const fileInput = div.querySelector('.blog-image-input');
-        const fileNameDisplay = div.querySelector('.file-name-display');
-        const preview = div.querySelector('.image-preview');
+        <div id="editor" class="editor" contenteditable="true"></div>
 
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (file) {
-                fileNameDisplay.textContent = file.name;
-                preview.src = URL.createObjectURL(file);
-                preview.style.display = 'block';
+        <button type="submit">Submit</button>
+    </form>
+    `;
+
+    const editor = document.getElementById('editor');
+
+    // Insert image at cursor
+    document.getElementById('add-image-btn').addEventListener('click', async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (!file) return;
+
+            const compressed = await compressImage(file);
+            const fileName = `temp-${Date.now()}-${imageCount++}.webp`;
+
+            const { error } = await supabase.storage
+                .from('images')
+                .upload(fileName, compressed, { contentType: 'image/webp' });
+
+            if (error) {
+                alertPopups("Image upload failed: " + error.message);
+                return;
             }
-        });
 
-        div.querySelector('.remove-image-btn').addEventListener('click', () => {
-            div.remove();
-            renumberImages();
-        });
+            const { data } = supabase.storage
+                .from('images')
+                .getPublicUrl(fileName);
 
-        document.getElementById('image-inputs').appendChild(div);
+            insertImageAtCursor(data.publicUrl);
+        };
+
+        input.click();
     });
 
-    document.getElementById('upload-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        uploadData(supabase);
-    });
-}
+    function insertImageAtCursor(url) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'post-image';
 
-async function uploadData(supabase) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return alertPopups("Not logged in.");
-
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', user.id)
-        .maybeSingle();
-
-    const path = document.getElementById('blogPath').value;
-    const title = document.getElementById('blogTitle').value;
-    const content = document.getElementById('blogContent').value;
-    const genre = document.getElementById('blogGenre').value;
-
-    const imageFiles = document.querySelectorAll('.blog-image-input');
-    const imageUrls = [];
-
-    for (let i = 0; i < imageFiles.length; i++) {
-        const file = imageFiles[i].files[0];
-        if (!file) return alertPopups(`Image ${i + 1} missing.`);
-
-        const compressed = await compressImage(file);
-        const fileName = `${path}-${Date.now()}-${i}.webp`;
-
-        await supabase.storage.from('images').upload(fileName, compressed);
-        const { data } = supabase.storage.from('images').getPublicUrl(fileName);
-
-        imageUrls.push(data.publicUrl);
-    }
-
-    // ✅ FIXED VALIDATION
-    const markers = content.match(/\[image\s*\d+\s*\]/gi) || [];
-
-    if (markers.length !== imageUrls.length) {
-        return alertPopups(
-            `You have ${markers.length} image markers but ${imageUrls.length} images.`
-        );
-    }
-
-    await supabase.from('bloginfo').insert([{
-        blogPath: path,
-        genre,
-        blogData: {
-            PostName: title,
-            Post: content,
-            Author: profile.display_name,
-            Images: imageUrls
+        const selection = window.getSelection();
+        if (!selection.rangeCount) {
+            editor.appendChild(img);
+            return;
         }
-    }]);
 
-    window.location.hash = "";
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(img);
+
+        // Move cursor after image
+        range.setStartAfter(img);
+        range.setEndAfter(img);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    document.getElementById('upload-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return alertPopups("Not logged in.");
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        const path = document.getElementById('blogPath').value;
+        const title = document.getElementById('blogTitle').value;
+        const genre = document.getElementById('blogGenre').value;
+
+        const contentHTML = editor.innerHTML;
+
+        if (!contentHTML.trim()) {
+            return alertPopups("Post content cannot be empty.");
+        }
+
+        const { error } = await supabase
+            .from('bloginfo')
+            .insert([{
+                blogPath: path,
+                genre,
+                blogData: {
+                    PostName: title,
+                    Post: contentHTML,
+                    Author: profile.display_name,
+                    Images: [] // optional now
+                }
+            }]);
+
+        if (error) {
+            alertPopups("Upload Error: " + error.message);
+        } else {
+            window.location.hash = "";
+        }
+    });
 }

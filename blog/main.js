@@ -166,30 +166,18 @@ export async function alertPopups(message) {
 
 function renderContent(post, indexPage) {
     let content = post.Post || '';
-    const images = post.Images || [];
 
-    // INDEX PAGE (preview)
     if (indexPage) {
-        content = content
-            .replace(/\[image\s*\d+\s*\]/gi, '') // remove markers
-            .split('\n')[0]; // first line only
+        // Strip images for preview
+        const textOnly = content
+            .replace(/<img[^>]*>/g, '')
+            .replace(/<[^>]+>/g, '');
 
-        return `<p class="post-content">${content}...</p>`;
+        const preview = textOnly.split('\n')[0].substring(0, 120);
+
+        return `<p class="post-content">${preview}...</p>`;
     }
 
-    // FULL POST
-    const parts = content.split(/(\[image\s*\d+\s*\])/gi);
-
-    return parts.map(part => {
-        const match = part.match(/\[image\s*(\d+)\s*\]/i);
-
-        if (match) {
-            const index = parseInt(match[1], 10) - 1;
-            const src = images[index];
-            return src ? `<img class="post-image" src="${src}">` : '';
-        }
-
-        const trimmed = part.trim();
-        return trimmed ? `<p class="post-content">${trimmed}</p>` : '';
-    }).join('');
+    // Full post: render HTML directly
+    return `<div class="post-content">${content}</div>`;
 }

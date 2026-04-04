@@ -9,7 +9,31 @@
   margin: 0 auto;
   padding: 2rem 8% 4rem;
 }
+.live-preview {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+}
+.editor {
+    border: 1px solid #ccc;
+    min-height: 200px;
+    padding: 10px;
+    margin-top: 10px;
+}
 
+.editor img {
+    max-width: 100%;
+    display: block;
+    margin: 10px 0;
+}
+
+.editor-toolbar {
+    margin-bottom: 10px;
+}
+.post-image {
+    max-width: 100%;
+    margin: 10px 0;
+}
 #container {
   display: flex;
   flex-direction: column;
