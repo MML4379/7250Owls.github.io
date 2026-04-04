@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Team 7250 Blog</title>
+  <link rel="icon" type="image/png" href="../Images/favico.png">
+  <link rel="apple-touch-icon" href="../Images/7250_Team_Logo.png">
+  <link rel="stylesheet" href="../style.css?v=1.3">
+  <link rel="stylesheet" href="blog.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ===================== SHARED NAVBAR ===================== -->
+  <nav class="navbar">
+    <div class="nav-brand-row">
+      <div class="social-links">
+        <a href="https://www.youtube.com/@0sCODEa0wl5" target="_blank"><i class="fab fa-youtube"></i></a>
+        <a href="https://www.tiktok.com/@team_7250_oscodea_0wl5" target="_blank"><i class="fab fa-tiktok"></i></a>
+        <a href="https://www.facebook.com/Team7250/" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a href="https://www.instagram.com/roboticsteam7250" target="_blank"><i class="fab fa-instagram"></i></a>
+      </div>
+      <div class="nav-marquee" id="marquee-container">
+        <div class="nav-marquee-content" id="marquee-content">
+          <img src="../Images/Sponsors/Sponsor1.jpg"  alt="Sponsor 1">
+          <img src="../Images/Sponsors/Sponsor2.jpg"  alt="Sponsor 2">
+          <img src="../Images/Sponsors/Sponsor3.png"  alt="Sponsor 3">
+          <img src="../Images/Sponsors/Sponsor4.jpg"  alt="Sponsor 4">
+          <img src="../Images/Sponsors/Sponsor5.png"  alt="Sponsor 5">
+          <img src="../Images/Sponsors/Sponsor6.png"  alt="Sponsor 6">
+          <img src="../Images/Sponsors/Sponsor7.jpg"  alt="Sponsor 7">
+          <img src="../Images/Sponsors/Sponsor8.jpg"  alt="Sponsor 8">
+          <img src="../Images/Sponsors/Sponsor9.jpg"  alt="Sponsor 9">
+          <img src="../Images/Sponsors/Sponsor10.jpg" alt="Sponsor 10">
+          <img src="../Images/Sponsors/Sponsor11.jpg" alt="Sponsor 11">
+        </div>
+      </div>
+      <div class="logo-group">
+        <div class="logo">TEAM <span>7250</span></div>
+        <img src="../Images/7250_Team_Logo.png" alt="7250 Logo" class="nav-logo-right">
+      </div>
+    </div>
+
+    <div class="nav-menu-row">
+      <ul class="nav-links">
+        <li><a href="/" class="nav-item">HOME</a></li>
+        <li><a href="#" class="nav-item active" id="nav-posts" onclick="showBlogView('posts')">POSTS</a></li>
+        <li><a href="#upload" class="nav-item" id="nav-upload" onclick="showBlogView('upload')">UPLOAD</a></li>
+        <li><button id="signout" class="nav-item nav-btn blog-signout">SIGN OUT</button></li>
+      </ul>
+    </div>
+  </nav>
+  <!-- ===================== END NAVBAR ===================== -->
+
+  <main class="blog-main">
+    <div id="blog-search-wrapper">
+      <div class="blog-search-inputs">
+        <input type="text" id="blog-search" placeholder="SEARCH TITLE / CONTENT..." autocomplete="off" spellcheck="false">
+        <input type="text" id="blog-search-author" placeholder="SEARCH AUTHOR..." autocomplete="off" spellcheck="false">
+      </div>
+      <div class="blog-genre-pills">
+        <button class="genre-pill active" data-genre="">ALL</button>
+        <button class="genre-pill" data-genre="Mechanical">⚙️ MECHANICAL</button>
+        <button class="genre-pill" data-genre="Electrical">⚡ ELECTRICAL</button>
+        <button class="genre-pill" data-genre="Programming">💻 PROGRAMMING</button>
+        <button class="genre-pill" data-genre="Business">📊 BUSINESS</button>
+        <button class="genre-pill" data-genre="Community">🤝 COMMUNITY</button>
+        <button class="genre-pill" data-genre="Competition">🏆 COMPETITION</button>
+        <button class="genre-pill" data-genre="Other">📝 OTHER</button>
+      </div>
+      <span id="blog-search-count"></span>
+    </div>
+    <div id="container"></div>
+    <div id="alert" class="alert"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" src="main.js"></script>
+
+  <script>
+    // ---- Nav active state ----
+    function showBlogView(view) {
+      document.querySelectorAll('.nav-links .nav-item').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById('nav-' + view);
+      if (target) target.classList.add('active');
+      if (view === 'upload') {
+        window.location.hash = 'upload';
+      } else {
+        history.pushState('', document.title, window.location.pathname);
+      }
+    }
+
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash;
+      document.querySelectorAll('.nav-links .nav-item').forEach(el => el.classList.remove('active'));
+      if (hash === '#login') {
+        document.getElementById('signout').classList.add('active');
+      } else {
+        const view = hash === '#upload' ? 'upload' : 'posts';
+        const target = document.getElementById('nav-' + view);
+        if (target) target.classList.add('active');
+      }
+      updateSearchVisibility();
+    });
+
+    // ---- Search / Filter ----
+    const searchWrapper  = document.getElementById('blog-search-wrapper');
+    const searchInput    = document.getElementById('blog-search');
+    const authorInput    = document.getElementById('blog-search-author');
+    const searchCount    = document.getElementById('blog-search-count');
+    const genrePills     = document.querySelectorAll('.genre-pill');
+    let   activeGenre    = '';
+
+    function filterPosts() {
+      const cards = document.querySelectorAll('#container .post-card');
+      if (!cards.length) return;
+
+      const q      = searchInput.value.toLowerCase().trim();
+      const author = authorInput.value.toLowerCase().trim();
+      let visible  = 0;
+
+      cards.forEach(card => {
+        const title   = (card.querySelector('.post-title')?.textContent   || '').toLowerCase();
+        const content = (card.querySelector('.post-content')?.textContent || '').toLowerCase();
+        const cardAuthor = (card.querySelector('.author-date')?.textContent || '').toLowerCase();
+        const genre   = (card.querySelector('.post-genre')?.textContent   || '').toLowerCase();
+
+        const matchText   = !q      || title.includes(q)      || content.includes(q);
+        const matchAuthor = !author || cardAuthor.includes(author);
+        const matchGenre  = !activeGenre || genre.includes(activeGenre.toLowerCase());
+
+        const show = matchText && matchAuthor && matchGenre;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      const anyFilter = q || author || activeGenre;
+      if (anyFilter) {
+        searchCount.textContent = visible + ' result' + (visible !== 1 ? 's' : '');
+        searchCount.style.display = 'inline';
+      } else {
+        searchCount.style.display = 'none';
+      }
+    }
+
+    searchInput.addEventListener('input', filterPosts);
+    authorInput.addEventListener('input', filterPosts);
+
+    genrePills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        genrePills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeGenre = pill.dataset.genre;
+        filterPosts();
+      });
+    });
+
+    // Hide search on upload/login views
+    function updateSearchVisibility() {
+      const hash = window.location.hash;
+      const hide = hash !== '';
+      searchWrapper.style.display = hide ? 'none' : '';
+      if (hide) {
+        searchInput.value  = '';
+        authorInput.value  = '';
+        activeGenre        = '';
+        genrePills.forEach(p => p.classList.remove('active'));
+        genrePills[0].classList.add('active');
+        searchCount.style.display = 'none';
+      }
+    }
+
+    // Re-apply filter when main.js repopulates #container
+    const observer = new MutationObserver(filterPosts);
+    observer.observe(document.getElementById('container'), { childList: true });
+
+    updateSearchVisibility();
+  </script>
+
+</body>
+</html>
