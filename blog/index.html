@@ -160,7 +160,7 @@
     // Hide search on upload/login views
     function updateSearchVisibility() {
       const hash = window.location.hash;
-      const hide = hash === '#upload' || hash === '#login';
+      const hide = hash !== '#';
       searchWrapper.style.display = hide ? 'none' : '';
       if (hide) {
         searchInput.value  = '';
