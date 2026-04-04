@@ -151,7 +151,7 @@ async function uploadData(supabase) {
     }
 
     // Count [image] markers in content and validate
-    const markerCount = (content.match(/\[image\]/g) || []).length;
+    const markerCount = (content.match(/\[image\d+\]/g) || []).length;
     if (markerCount !== imageUrls.length) {
         alertPopups(`You have ${markerCount} [image] markers but ${imageUrls.length} images. They must match.`);
         return;
