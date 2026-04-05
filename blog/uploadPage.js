@@ -38,6 +38,7 @@ async function hashFile(blob) {
 
 export async function pageLoad(supabase) {
     const container = document.getElementById('container');
+    const imageLayer = document.getElementById('image-layer');
 
     container.innerHTML = `
     <form class="upload-container" id="upload-form">
@@ -60,6 +61,7 @@ export async function pageLoad(supabase) {
         </div>
 
         <div id="editor" class="editor" contenteditable="true"></div>
+        <div id="image-layer" class="image-layer"></div>
 
         <button type="submit">Submit</button>
     </form>
@@ -107,31 +109,29 @@ export async function pageLoad(supabase) {
         input.click();
     });
 
-    function insertImageAtCursor(url) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'image-wrapper';
-        wrapper.contentEditable = "false";
+function insertImageAtCursor(url) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'image-wrapper';
 
-        const img = document.createElement('img');
-        img.src = url;
-        img.className = 'post-image';
-        img.style.width = '300px';
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'post-image';
+    img.style.width = '300px';
 
-        const handle = document.createElement('div');
-        handle.className = 'resize-handle';
+    const handle = document.createElement('div');
+    handle.className = 'resize-handle';
 
-        wrapper.appendChild(img);
-        wrapper.appendChild(handle);
+    wrapper.appendChild(img);
+    wrapper.appendChild(handle);
 
-        // Default position
-        wrapper.style.left = '20px';
-        wrapper.style.top = '20px';
+    wrapper.style.left = '20px';
+    wrapper.style.top = '20px';
 
-        editor.appendChild(wrapper);
+    imageLayer.appendChild(wrapper); // 🔥 NOT editor anymore
 
-        enableResize(wrapper, img, handle);
-        enableDrag(wrapper);
-    }
+    enableResize(wrapper, img, handle);
+    enableDrag(wrapper);
+}
     editor.addEventListener('mousedown', (e) => {
     const wrapper = e.target.closest('.image-wrapper');
 
@@ -252,6 +252,18 @@ function enableDrag(wrapper) {
         });
         const contentHTML = editor.innerHTML;
 
+const images = [];
+document.querySelectorAll('.image-wrapper').forEach(w => {
+    const img = w.querySelector('img');
+
+    images.push({
+        src: img.src,
+        x: w.style.left,
+        y: w.style.top,
+        width: img.style.width
+    });
+});
+
         if (!contentHTML.trim()) {
             return alertPopups("Content empty.");
         }
@@ -265,7 +277,7 @@ function enableDrag(wrapper) {
                     PostName: title,
                     Post: contentHTML,
                     Author: profile.display_name,
-                    Images: []
+                    Images: images
                 }
             }]);
 

@@ -22,6 +22,7 @@
   padding: 10px;
   position: relative;
   cursor: text;
+  z-index: 1;
 }
 
 .editor::after {
@@ -37,7 +38,7 @@
   z-index: 10;
   transform: translate(0, 0);
   /* forces its own layer */
-  pointer-events: none;
+  pointer-events: all;
 }
 
 .image-wrapper img {
@@ -48,6 +49,15 @@
 .resize-handle {
   pointer-events: all;
   cursor: se-resize;
+}
+.image-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* 🔥 allows typing */
+    z-index: 5;
 }
 
 .image-wrapper.selected {
