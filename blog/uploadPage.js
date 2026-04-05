@@ -164,6 +164,9 @@ export async function pageLoad(supabase) {
     // Update active state when cursor moves
     editor.addEventListener('keyup', updateToolbarState);
     editor.addEventListener('mouseup', updateToolbarState);
+    editor.addEventListener('mousedown', () => {
+        imageLayer.querySelectorAll('.image-wrapper').forEach(w => w.classList.remove('selected'));
+    });
 
     function updateToolbarState() {
         document.getElementById('bold-btn').classList.toggle('active', document.queryCommandState('bold'));
@@ -222,13 +225,23 @@ export async function pageLoad(supabase) {
         const handle = document.createElement('div');
         handle.className = 'resize-handle';
 
+        // ✅ Add delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'image-delete-btn';
+        deleteBtn.textContent = '✕';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            wrapper.remove();
+        });
+
         wrapper.appendChild(img);
         wrapper.appendChild(handle);
-
+        wrapper.appendChild(deleteBtn);
         wrapper.style.left = '20px';
         wrapper.style.top = '20px';
 
-        imageLayer.appendChild(wrapper); // 🔥 NOT editor anymore
+        imageLayer.appendChild(wrapper);
 
         enableResize(wrapper, img, handle);
         enableDrag(wrapper);
@@ -239,6 +252,15 @@ export async function pageLoad(supabase) {
         if (wrapper) {
             wrapper.classList.add('selected');
             e.preventDefault();
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if ((e.key === 'Delete' || e.key === 'Backspace') && document.activeElement !== editor) {
+            const selected = imageLayer.querySelector('.image-wrapper.selected');
+            if (selected) {
+                e.preventDefault();
+                selected.remove();
+            }
         }
     });
 
