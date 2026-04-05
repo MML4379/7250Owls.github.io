@@ -328,7 +328,7 @@ async function checkForActiveEvent() {
     const navLink = document.querySelector('.nav-item[onclick*="live"]');
     if (!navLink) return; // bail safely if the nav item doesn't exist
     const liveNavItem = navLink.parentElement;
-    liveNavItem.style.display = 'none';
+    liveNavItem.innerHTML = '<a href="#" class="nav-item" onclick="showSection(\'live\')">🔴LIVE</a>';
 
     try {
         const today = new Date().toISOString().split('T')[0];
@@ -338,7 +338,7 @@ async function checkForActiveEvent() {
         );
         const events = await res.json();
         const active = events.find(e => e.start_date <= today && e.end_date >= today);
-        if (active) liveNavItem.style.display = '';
+        if (active) liveNavItem.innerHTML = '<a href="#" class="nav-item" onclick="showSection(\'live\')">🟢LIVE</a>';
     } catch (err) {
         // silently fail — nav item stays hidden
     }
