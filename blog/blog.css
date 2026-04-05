@@ -37,6 +37,7 @@
   z-index: 10;
   transform: translate(0, 0);
   /* forces its own layer */
+  pointer-events: none;
 }
 
 .image-wrapper img {
@@ -46,6 +47,13 @@
 
 .resize-handle {
   pointer-events: all;
+  cursor: se-resize;
+}
+
+.image-wrapper.selected {
+  pointer-events: all;
+  /* only interact when selected */
+  cursor: move;
 }
 
 .post-image {

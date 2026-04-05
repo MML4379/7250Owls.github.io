@@ -133,45 +133,55 @@ export async function pageLoad(supabase) {
         enableDrag(wrapper);
     }
     editor.addEventListener('mousedown', (e) => {
-        if (!e.target.closest('.image-wrapper')) {
-            editor.focus();
-        }
+    const wrapper = e.target.closest('.image-wrapper');
+
+    document.querySelectorAll('.image-wrapper').forEach(w => {
+        w.classList.remove('selected');
     });
 
-    function enableDrag(wrapper) {
-        let isDragging = false;
-
-        wrapper.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-
-            isDragging = true;
-
-            const rect = wrapper.getBoundingClientRect();
-            const offsetX = e.clientX - rect.left;
-            const offsetY = e.clientY - rect.top;
-
-            function onMove(e) {
-                if (!isDragging) return;
-
-                const editorRect = editor.getBoundingClientRect();
-
-                let x = e.clientX - editorRect.left - offsetX;
-                let y = e.clientY - editorRect.top - offsetY;
-
-                wrapper.style.left = x + 'px';
-                wrapper.style.top = y + 'px';
-            }
-
-            function onUp() {
-                isDragging = false;
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-            }
-
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        });
+    if (wrapper) {
+        wrapper.classList.add('selected');
+        e.preventDefault(); // prevent cursor weirdness
+    } else {
+        editor.focus(); // 🔥 ensure typing works
     }
+});
+
+function enableDrag(wrapper) {
+    let isDragging = false;
+
+    wrapper.addEventListener('mousedown', (e) => {
+        if (!wrapper.classList.contains('selected')) return;
+        if (e.target.classList.contains('resize-handle')) return;
+
+        isDragging = true;
+
+        const rect = wrapper.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+
+        function onMove(e) {
+            if (!isDragging) return;
+
+            const editorRect = editor.getBoundingClientRect();
+
+            let x = e.clientX - editorRect.left - offsetX;
+            let y = e.clientY - editorRect.top - offsetY;
+
+            wrapper.style.left = x + 'px';
+            wrapper.style.top = y + 'px';
+        }
+
+        function onUp() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        }
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+}
 
     function enableResize(wrapper, img, handle) {
         let isResizing = false;
