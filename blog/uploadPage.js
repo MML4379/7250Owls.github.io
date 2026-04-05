@@ -132,6 +132,11 @@ export async function pageLoad(supabase) {
         enableResize(wrapper, img, handle);
         enableDrag(wrapper);
     }
+    editor.addEventListener('mousedown', (e) => {
+        if (!e.target.closest('.image-wrapper')) {
+            editor.focus();
+        }
+    });
 
     function enableDrag(wrapper) {
         let isDragging = false;
@@ -206,6 +211,7 @@ export async function pageLoad(supabase) {
         if (wrapper) {
             wrapper.classList.add('selected');
         }
+        
     });
 
     // SUBMIT
@@ -234,6 +240,7 @@ export async function pageLoad(supabase) {
             const img = w.querySelector('img');
             w.setAttribute('data-width', img.style.width);
         });
+        const contentHTML = editor.innerHTML;
 
         if (!contentHTML.trim()) {
             return alertPopups("Content empty.");

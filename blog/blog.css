@@ -21,6 +21,7 @@
   min-height: 300px;
   padding: 10px;
   position: relative;
+  cursor: text;
 }
 
 .editor::after {
@@ -40,6 +41,7 @@
 
 .image-wrapper img {
   display: block;
+  pointer-events: none;
 }
 
 .resize-handle {
