@@ -9,54 +9,73 @@
   margin: 0 auto;
   padding: 2rem 8% 4rem;
 }
+
 .live-preview {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-top: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 10px;
 }
+
 .editor {
-    border: 1px solid #ccc;
-    min-height: 200px;
-    padding: 10px;
-    position: relative;
+  border: 1px solid royalblue;
+  min-height: 300px;
+  padding: 10px;
+  position: relative;
+}
+
+.editor::after {
+  content: "";
+  display: block;
+  height: 200px;
+  /* space for dragged images */
 }
 
 .image-wrapper {
-    position: absolute; /* key change */
-    top: 0;
-    left: 0;
-    cursor: move;
-    user-select: none;
+  position: absolute;
+  user-select: none;
+  z-index: 10;
+  transform: translate(0, 0);
+  /* forces its own layer */
 }
 
-.post-image {
-    display: block;
-    max-width: none; /* important for resizing */
+.image-wrapper img {
+  display: block;
 }
 
 .resize-handle {
-    width: 12px;
-    height: 12px;
-    background: #007bff;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    cursor: se-resize;
-    border-radius: 0px 50% 50% 50%;
+  pointer-events: all;
+}
+
+.post-image {
+  display: block;
+  max-width: none;
+  /* important for resizing */
+}
+
+.resize-handle {
+  width: 12px;
+  height: 12px;
+  background: #007bff;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  border-radius: 0px 50% 50% 50%;
 }
 
 .image-wrapper.selected .resize-handle {
-    display: block;
+  display: block;
 }
+
 .editor img {
-    max-width: 100%;
-    display: block;
-    margin: 10px 0;
+  pointer-events: none;
+  /* prevents weird selection */
 }
 
 .editor-toolbar {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
+
 #container {
   display: flex;
   flex-direction: column;
@@ -91,14 +110,17 @@
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+
 #blog-search-author {
   flex: 0 0 220px;
 }
+
 #blog-search::placeholder,
 #blog-search-author::placeholder {
   color: rgba(255, 255, 255, 0.25);
   letter-spacing: 0.08em;
 }
+
 #blog-search:focus,
 #blog-search-author:focus {
   border-color: var(--neon-blue);
@@ -125,10 +147,12 @@
   transition: border-color 0.2s, color 0.2s, background 0.2s;
   white-space: nowrap;
 }
+
 .genre-pill:hover {
   border-color: var(--neon-blue);
   color: var(--white);
 }
+
 .genre-pill.active {
   border-color: var(--neon-blue);
   color: var(--neon-blue);
@@ -151,6 +175,7 @@
   padding: 1.5rem 1.75rem;
   transition: border-color 0.2s;
 }
+
 .post-card:hover {
   border-color: var(--neon-blue);
 }
@@ -166,6 +191,7 @@
   margin-bottom: 0.4rem;
   transition: color 0.2s;
 }
+
 .post-card .post-title:hover {
   color: var(--neon-blue);
   text-shadow: 0 0 8px var(--neon-blue);
@@ -179,6 +205,7 @@
   margin-bottom: 0.5rem;
   letter-spacing: 0.04em;
 }
+
 .post-card .author-date p {
   margin: 0;
 }
@@ -190,6 +217,7 @@
   color: var(--neon-blue);
   margin-bottom: 0.75rem;
 }
+
 .post-card .genre-icon {
   margin-right: 4px;
 }
@@ -238,6 +266,7 @@
   outline: none;
   transition: border-color 0.2s;
 }
+
 .upload-container input[type="text"]:focus,
 .upload-container textarea:focus,
 .upload-container select:focus {
@@ -249,6 +278,7 @@
   cursor: pointer;
   appearance: none;
 }
+
 .upload-container select option {
   background: var(--dark-grey);
   color: var(--white);
@@ -275,15 +305,18 @@
   align-self: flex-start;
   transition: background 0.2s, border-color 0.2s;
 }
+
 .upload-container button:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.6);
 }
+
 .upload-container button[type="submit"] {
   border-color: var(--neon-blue);
   color: var(--neon-blue);
   margin-top: 0.5rem;
 }
+
 .upload-container button[type="submit"]:hover {
   background: rgba(0, 94, 255, 0.15);
   text-shadow: 0 0 8px var(--neon-blue);
@@ -327,9 +360,11 @@
   transition: background 0.2s;
   white-space: nowrap;
 }
+
 .file-input-btn:hover {
   background: rgba(0, 94, 255, 0.3);
 }
+
 .file-input-btn input[type="file"] {
   display: none;
 }
@@ -356,6 +391,7 @@
   align-self: auto;
   transition: background 0.15s, color 0.15s !important;
 }
+
 .remove-image-btn:hover {
   background: rgba(220, 60, 60, 0.15) !important;
   color: #ff6b6b !important;
@@ -398,6 +434,7 @@
   outline: none;
   transition: border-color 0.2s;
 }
+
 #login-form input:focus {
   border-color: var(--neon-blue);
   box-shadow: 0 0 0 2px rgba(0, 94, 255, 0.15);
@@ -418,6 +455,7 @@
   margin-top: 0.5rem;
   transition: background 0.2s;
 }
+
 #login-form button[type="submit"]:hover {
   background: rgba(0, 94, 255, 0.15);
   text-shadow: 0 0 8px var(--neon-blue);
@@ -464,6 +502,7 @@
   transition: color 0.15s;
   user-select: none;
 }
+
 .closebtn:hover {
   color: var(--white);
 }
@@ -484,9 +523,11 @@
   text-decoration: none;
   text-transform: uppercase;
 }
+
 #signout:hover {
   opacity: 1;
 }
+
 #signout.active {
   opacity: 1;
   color: var(--neon-blue);
@@ -498,17 +539,21 @@
   .blog-main {
     padding: 1.25rem 4% 3rem;
   }
+
   .upload-container,
   #login-form {
     padding: 1.25rem 1rem;
   }
+
   .image-input-controls {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .blog-search-inputs {
     flex-direction: column;
   }
+
   #blog-search-author {
     flex: 1;
   }

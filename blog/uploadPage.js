@@ -110,6 +110,12 @@ export async function pageLoad(supabase) {
     function insertImageAtCursor(url) {
         const wrapper = document.createElement('div');
         wrapper.className = 'image-wrapper';
+        wrapper.contentEditable = "false";
+        editor.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.image-wrapper')) {
+                e.preventDefault(); // stops text cursor behavior
+            }
+        });
 
         const img = document.createElement('img');
         img.src = url;
