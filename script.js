@@ -29,8 +29,6 @@ function initMarquee() {
     });
 }
 
-initMarquee();
-
 function showSection(sectionId) {
     const sections = document.querySelectorAll('.content-section');
     sections.forEach(sec => sec.style.display = 'none');
@@ -214,12 +212,7 @@ async function fetchLiveStream() {
             return;
         }
 
-        const eventRes = await fetch(
-            `https://www.thebluealliance.com/api/v3/event/${active.key}`,
-            { headers: { 'X-TBA-Auth-Key': TBA_API_KEY } }
-        );
-        const event = await eventRes.json();
-        const webcasts = event.webcasts || [];
+        const webcasts = active.webcasts || [];
 
         if (webcasts.length === 0) {
             container.innerHTML = `
@@ -327,8 +320,10 @@ async function fetchLiveStream() {
     }
 }
 async function checkForActiveEvent() {
-    const liveNavItem = document.querySelector('.nav-item[onclick*="live"]').parentElement;
-    liveNavItem.style.display = 'none'; // hidden by default
+    const navLink = document.querySelector('.nav-item[onclick*="live"]');
+    if (!navLink) return; // bail safely if the nav item doesn't exist
+    const liveNavItem = navLink.parentElement;
+    liveNavItem.style.display = 'none';
 
     try {
         const today = new Date().toISOString().split('T')[0];
@@ -343,4 +338,124 @@ async function checkForActiveEvent() {
         // silently fail — nav item stays hidden
     }
 }
-checkForActiveEvent()
+async function prefetchCurrentYear() {
+    if (statsCache[CURRENT_YEAR]) return;
+
+    try {
+        const eventsRes = await fetch(
+            `https://www.thebluealliance.com/api/v3/team/${TEAM_KEY}/events/${CURRENT_YEAR}`,
+            { headers: { 'X-TBA-Auth-Key': TBA_API_KEY } }
+        );
+        const events = await eventsRes.json();
+        events.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+        const today = new Date();
+        let html = '';
+
+        for (const event of events) {
+            const eventStartDate = new Date(event.start_date);
+            if (eventStartDate > today) {
+                html += `
+                    <div class="stats-card">
+                        <h3 style="font-family:var(--robot-font); color:var(--neon-blue);">${event.name}</h3>
+                        <p style="margin-top:10px;">📍 ${event.city}, ${event.state_prov}</p>
+                        <p>📅 ${event.start_date} [UPCOMING]</p>
+                        <div class="external-links">
+                            <a href="https://www.thebluealliance.com/event/${event.key}" target="_blank" class="btn-link">TBA</a>
+                            <a href="https://www.statbotics.io/event/${event.key}" target="_blank" class="btn-link">Statbotics</a>
+                        </div>
+                    </div>`;
+                continue;
+            }
+
+            const [statusRes, matchesRes, awardsRes] = await Promise.all([
+                fetch(`https://www.thebluealliance.com/api/v3/team/${TEAM_KEY}/event/${event.key}/status`, { headers: { 'X-TBA-Auth-Key': TBA_API_KEY } }),
+                fetch(`https://www.thebluealliance.com/api/v3/team/${TEAM_KEY}/event/${event.key}/matches`, { headers: { 'X-TBA-Auth-Key': TBA_API_KEY } }),
+                fetch(`https://www.thebluealliance.com/api/v3/team/${TEAM_KEY}/event/${event.key}/awards`, { headers: { 'X-TBA-Auth-Key': TBA_API_KEY } })
+            ]);
+
+            const status = await statusRes.json();
+            const matches = await matchesRes.json();
+            const awards = await awardsRes.json();
+
+            const teamMatches = matches.filter(m => m.alliances.blue.team_keys.includes(TEAM_KEY) || m.alliances.red.team_keys.includes(TEAM_KEY));
+            const sortedMatches = teamMatches.sort((a, b) => a.time - b.time);
+
+            const qualMatches = sortedMatches.filter(m => m.comp_level === 'qm').map(m => {
+                const isBlue = m.alliances.blue.team_keys.includes(TEAM_KEY);
+                const alliance = isBlue ? 'BLUE' : 'RED';
+                const myScore = isBlue ? m.alliances.blue.score : m.alliances.red.score;
+                const oppScore = isBlue ? m.alliances.red.score : m.alliances.blue.score;
+                const resultClass = (myScore > oppScore) ? 'win' : (myScore < oppScore ? 'loss' : '');
+                const videoLink = m.videos && m.videos.length > 0 ? `<a href="https://www.youtube.com/watch?v=${m.videos[0].key}" target="_blank" class="video-link">▶</a>` : '';
+                return `<div class="match-card-wrapper"><span class="match-badge ${resultClass}">Q${m.match_number}<br>[${alliance}]<br>${myScore}-${oppScore}</span>${videoLink}</div>`;
+            }).join('');
+
+            const playoffMatches = sortedMatches.filter(m => m.comp_level !== 'qm').map(m => {
+                const isBlue = m.alliances.blue.team_keys.includes(TEAM_KEY);
+                const alliance = isBlue ? 'BLUE' : 'RED';
+                const myScore = isBlue ? m.alliances.blue.score : m.alliances.red.score;
+                const oppScore = isBlue ? m.alliances.red.score : m.alliances.blue.score;
+                const resultClass = (myScore > oppScore) ? 'win' : (myScore < oppScore ? 'loss' : '');
+                const level = m.comp_level.toUpperCase();
+                const displayNum = `${m.set_number}-${m.match_number}`;
+                const videoLink = m.videos && m.videos.length > 0 ? `<a href="https://www.youtube.com/watch?v=${m.videos[0].key}" target="_blank" class="video-link">▶</a>` : '';
+                return `<div class="match-card-wrapper"><span class="match-badge ${resultClass}">${level}${displayNum}<br>[${alliance}]<br>${myScore}-${oppScore}</span>${videoLink}</div>`;
+            }).join('');
+
+            let finish = "Qualifications";
+            let playoffRecord = "0W-0L";
+            if (status?.playoff) {
+                const wins = status.playoff.record?.wins || 0;
+                const losses = status.playoff.record?.losses || 0;
+                playoffRecord = `${wins}W-${losses}L`;
+                if (status.playoff.status === 'won') finish = "Event Winners";
+                else if (status.playoff.level === 'f') finish = "Finalists";
+                else if (status.playoff.level === 'sf') finish = "Semifinalists";
+                else if (status.playoff.level === 'qf') finish = "Quarterfinalists";
+            }
+
+            const awardTags = awards.map(a => `<div class="award-tag">🏆 ${a.name}</div>`).join('');
+
+            html += `
+                <div class="stats-card">
+                    <h3 style="font-family:var(--robot-font); color:var(--neon-blue);">${event.name}</h3>
+                    <div class="report-grid">
+                        <div class="report-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4>QUALIFICATIONS</h4>
+                                ${qualMatches ? `<button class="toggle-btn" onclick="toggleMatches(this)">▼</button>` : ''}
+                            </div>
+                            <p>Rank: <strong>${status?.qual?.ranking?.rank || 'N/A'}</strong></p>
+                            <p>Record: <strong>${status?.qual?.ranking?.record?.wins || 0}W-${status?.qual?.ranking?.record?.losses || 0}L</strong></p>
+                            ${qualMatches ? `<div class="matches-container" style="display: none; margin-top: 10px;"><div class="match-scroll">${qualMatches}</div></div>` : ''}
+                        </div>
+                        <div class="report-section">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4>PLAYOFFS</h4>
+                                ${playoffMatches ? `<button class="toggle-btn" onclick="toggleMatches(this)">▼</button>` : ''}
+                            </div>
+                            <p>Finish: <strong>${finish}</strong></p>
+                            <p>Record: <strong>${playoffRecord}</strong></p>
+                            ${playoffMatches ? `<div class="matches-container" style="display: none; margin-top: 10px;"><div class="match-scroll">${playoffMatches}</div></div>` : ''}
+                        </div>
+                    </div>
+                    <div class="awards-container">${awardTags}</div>
+                    <div class="external-links">
+                        <a href="https://www.thebluealliance.com/event/${event.key}" target="_blank" class="btn-link">TBA</a>
+                        <a href="https://www.statbotics.io/event/${event.key}" target="_blank" class="btn-link">Statbotics</a>
+                    </div>
+                </div>`;
+        }
+
+        statsCache[CURRENT_YEAR] = html;
+
+    } catch (err) {
+        // silently fail — fetchTeamStats will handle errors when user clicks EVENTS
+    }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    initMarquee();
+    prefetchCurrentYear();
+    checkForActiveEvent();
+});
