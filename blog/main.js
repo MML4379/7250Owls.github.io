@@ -192,3 +192,18 @@ function renderContent(post, indexPage) {
     html += `</div></div>`;
     return html;
 }
+function initMarquee() {
+    const content = document.getElementById('marquee-content');
+    if (!content) return;
+    const style = getComputedStyle(content);
+    const gap = parseInt(style.gap) || 0;
+    const originalHTML = content.innerHTML;
+    content.innerHTML += originalHTML;
+    window.addEventListener('load', () => {
+        const singleSetWidth = (content.scrollWidth + gap) / 2;
+        content.style.setProperty('--scroll-distance', `-${singleSetWidth}px`);
+        content.style.animation = "navScroll 30s linear infinite";
+    });
+}
+
+initMarquee();
