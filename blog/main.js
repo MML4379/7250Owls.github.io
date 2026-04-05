@@ -171,23 +171,24 @@ function renderContent(post, indexPage) {
         const textOnly = content
             .replace(/<img[^>]*>/g, '')
             .replace(/<[^>]+>/g, '');
-
         const preview = textOnly.split('\n')[0].substring(0, 120);
         return `<p class="post-content">${preview}...</p>`;
     }
 
-    let html = `<div class="post-content">${content}</div>`;
+    const maxBottom = Math.max(0, ...(post.Images || []).map(img => img.bottomPx || 0));
+
+    let html = `<div style="position: relative; width: 100%; min-height: ${maxBottom}px;">`;
+    html += `<div class="post-content">${content}</div>`;
     html += `<div class="image-layer">`;
 
     (post.Images || []).forEach(img => {
         html += `
-            <div class="image-wrapper" style="left:${img.x}; top:${img.y};">
-                <img src="${img.src}" style="width:${img.width};">
-            </div>
-        `;
+        <div class="image-wrapper" style="left:${img.x}; top:${img.y};">
+            <img src="${img.src}" style="width:${img.width};" draggable="false">
+        </div>
+    `;
     });
 
-    html += `</div>`;
-
+    html += `</div></div>`;
     return html;
 }

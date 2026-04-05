@@ -59,8 +59,10 @@ export async function pageLoad(supabase) {
             <button type="button" id="add-image-btn">🖼 Insert Image</button>
         </div>
 
-        <div id="editor" class="editor" contenteditable="true"></div>
-        <div id="image-layer" class="image-layer"></div>
+        <div id="editor-container" style="position: relative;">
+            <div id="editor" class="editor" contenteditable="true"></div>
+            <div id="image-layer" class="image-layer"></div>
+        </div>
 
         <button type="submit">Submit</button>
     </form>
@@ -132,18 +134,12 @@ export async function pageLoad(supabase) {
         enableResize(wrapper, img, handle);
         enableDrag(wrapper);
     }
-    editor.addEventListener('mousedown', (e) => {
+    imageLayer.addEventListener('mousedown', (e) => {
         const wrapper = e.target.closest('.image-wrapper');
-
-        imageLayer.querySelectorAll('.image-wrapper').forEach(w => {
-            w.classList.remove('selected');
-        });
-
+        imageLayer.querySelectorAll('.image-wrapper').forEach(w => w.classList.remove('selected'));
         if (wrapper) {
             wrapper.classList.add('selected');
-            e.preventDefault(); // prevent cursor weirdness
-        } else {
-            editor.focus(); // 🔥 ensure typing works
+            e.preventDefault();
         }
     });
 
@@ -163,9 +159,9 @@ export async function pageLoad(supabase) {
             function onMove(e) {
                 if (!isDragging) return;
 
-                const editorRect = editor.getBoundingClientRect(); // editor is still contenteditable
-                let x = e.clientX - editorRect.left - offsetX;
-                let y = e.clientY - editorRect.top - offsetY;
+                const containerRect = document.getElementById('editor-container').getBoundingClientRect(); // ← changed
+                let x = e.clientX - containerRect.left - offsetX;
+                let y = e.clientY - containerRect.top - offsetY;
 
                 wrapper.style.left = x + 'px';
                 wrapper.style.top = y + 'px';
@@ -209,19 +205,6 @@ export async function pageLoad(supabase) {
         });
     }
 
-    // CLICK TO SELECT IMAGE
-    editor.addEventListener('click', (e) => {
-        imageLayer.querySelectorAll('.image-wrapper').forEach(w => {
-            w.classList.remove('selected');
-        });
-
-        const wrapper = e.target.closest('.image-wrapper');
-        if (wrapper) {
-            wrapper.classList.add('selected');
-        }
-
-    });
-
     // SUBMIT
     document.getElementById('upload-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -250,15 +233,18 @@ export async function pageLoad(supabase) {
         });
         const contentHTML = editor.innerHTML;
 
+        const editorContainer = document.getElementById('editor-container');
+        const containerRect = editorContainer.getBoundingClientRect();
+
         const images = [];
         imageLayer.querySelectorAll('.image-wrapper').forEach(w => {
             const img = w.querySelector('img');
-
             images.push({
                 src: img.src,
-                x: w.style.left,
-                y: w.style.top,
-                width: img.style.width
+                x: (parseFloat(w.style.left) / containerRect.width * 100).toFixed(2) + '%',
+                y: (parseFloat(w.style.top) / containerRect.height * 100).toFixed(2) + '%',
+                width: (parseFloat(img.style.width) / containerRect.width * 100).toFixed(2) + '%',
+                bottomPx: parseFloat(w.style.top) + img.offsetHeight  // ← add this
             });
         });
 
