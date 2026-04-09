@@ -194,8 +194,8 @@ function renderContent(post, indexPage) {
 
   (post.Images || []).forEach((img) => {
     html += `
-    <div class="image-wrapper" style="left:${img.x}; top:${img.y}; width:${img.width};">
-        <img src="${img.src}" style="width:100%; display:block;" draggable="false">
+    <div class="image-wrapper" style="left:${img.x}; top:${img.y}; width:${img.width}; max-width: calc(100% - ${img.x});">
+        <img src="${img.src}" style="width:100%; height: auto; display:block; object-fit: contain;" draggable="false">
     </div>
     `;
   });
@@ -233,13 +233,14 @@ export async function updateUserDisplay() {
   const {
     data: { user },
   } = await _supabase.auth.getUser();
-    const { data: profile } = await _supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('id', user.id)
-            .maybeSingle();
+  const { data: profile } = await _supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
   if (user) {
-    userDisplay.textContent = profile?.display_name || user.email || "Logged in";
+    userDisplay.textContent =
+      profile?.display_name || user.email || "Logged in";
   }
 }
 
