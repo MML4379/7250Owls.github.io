@@ -443,7 +443,7 @@
   animation: slideUp 0.4s ease-out;
 }
 #user {
-  display:grid;
+  display: grid;
   font-family: var(--robot-font);
   color: rgb(173, 154, 154);
   font-size: 0.6rem;
@@ -774,27 +774,25 @@
   }
 
   .post-content-wrapper .image-layer {
-    position: static !important;
+    position: relative !important; /* flow in document, but still a positioning context */
     width: 100% !important;
-    height: auto !important;
+    height: var(--mobile-layer-height, 300px); /* fallback, JS will set this */
     min-height: unset !important;
-    pointer-events: auto;
   }
 
+  /* wrappers stay absolute so they can overlap each other */
   .post-content-wrapper .image-layer .image-wrapper {
-    position: static !important;
-    width: 100% !important;
-    margin: 0.75rem 0;
+    position: absolute !important;
+    width: 80% !important; /* sensible mobile width */
   }
 
-  .post-content-wrapper .image-layer .image-wrapper img,
-  .post-content-wrapper .image-layer .image-wrapper iframe {
+  .post-content-wrapper .image-layer .image-wrapper img {
     width: 100% !important;
     height: auto !important;
-    aspect-ratio: unset;
   }
 
   .post-content-wrapper .image-layer .image-wrapper iframe {
+    width: 100% !important;
     aspect-ratio: 16/9 !important;
   }
 }

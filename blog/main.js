@@ -246,29 +246,27 @@ export async function updateUserDisplay() {
 }
 function fixImageContainerHeights(container) {
   container.querySelectorAll(".post-content-wrapper").forEach((wrapper) => {
+    const layer = wrapper.querySelector(".image-layer");
     const images = wrapper.querySelectorAll("img");
-    if (images.length === 0) return;
+    if (!layer || images.length === 0) return;
 
     let loaded = 0;
 
     function recalcHeight() {
-      const wrapperRect = wrapper.getBoundingClientRect();
       let maxBottom = 0;
-      wrapper.querySelectorAll(".image-wrapper").forEach((w) => {
-        const rect = w.getBoundingClientRect();
-        maxBottom = Math.max(
-          maxBottom,
-          rect.top - wrapperRect.top + rect.height,
-        );
+      layer.querySelectorAll(".image-wrapper").forEach((w) => {
+        const bottom = w.offsetTop + w.offsetHeight;
+        maxBottom = Math.max(maxBottom, bottom);
       });
-      wrapper.style.minHeight = maxBottom + 20 + "px";
+      layer.style.setProperty("--mobile-layer-height", maxBottom + 20 + "px");
+      layer.style.height = maxBottom + 20 + "px"; // set directly too
     }
 
     function onLoad() {
       loaded++;
       if (loaded === images.length) {
         recalcHeight();
-        new ResizeObserver(recalcHeight).observe(wrapper); // recalc on resize
+        new ResizeObserver(recalcHeight).observe(wrapper);
       }
     }
 
