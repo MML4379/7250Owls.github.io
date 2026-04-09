@@ -73,6 +73,7 @@ async function fetchData() {
         })
         .join("");
       container.innerHTML = html;
+      fixImageContainerHeights(container);
     }
   } catch (err) {
     console.error("The REAL error is:", err.message);
@@ -188,7 +189,7 @@ function renderContent(post, indexPage) {
   );
   const maxBottom = Math.max(maxImageBottom, maxVideoBottom);
 
-  let html = `<div style="position: relative; width: 100%; min-height: ${maxBottom}px;">`;
+  let html = `<div class="post-content-wrapper" style="position: relative; width: 100%;">`;
   html += `<div class="post-content">${content}</div>`;
   html += `<div class="image-layer">`;
 
@@ -242,6 +243,40 @@ export async function updateUserDisplay() {
     userDisplay.textContent =
       profile?.display_name || user.email || "Logged in";
   }
+}
+function fixImageContainerHeights(container) {
+  container.querySelectorAll(".post-content-wrapper").forEach((wrapper) => {
+    const images = wrapper.querySelectorAll("img");
+    if (images.length === 0) return;
+
+    let loaded = 0;
+
+    function recalcHeight() {
+      const wrapperRect = wrapper.getBoundingClientRect();
+      let maxBottom = 0;
+      wrapper.querySelectorAll(".image-wrapper").forEach((w) => {
+        const rect = w.getBoundingClientRect();
+        maxBottom = Math.max(
+          maxBottom,
+          rect.top - wrapperRect.top + rect.height,
+        );
+      });
+      wrapper.style.minHeight = maxBottom + 20 + "px";
+    }
+
+    function onLoad() {
+      loaded++;
+      if (loaded === images.length) {
+        recalcHeight();
+        new ResizeObserver(recalcHeight).observe(wrapper); // recalc on resize
+      }
+    }
+
+    images.forEach((img) => {
+      if (img.complete) onLoad();
+      else img.addEventListener("load", onLoad);
+    });
+  });
 }
 
 initMarquee();
