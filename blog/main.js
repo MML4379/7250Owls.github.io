@@ -63,7 +63,7 @@ async function fetchData() {
 
                 return `
                 <div class="post-card">
-                    <a href="${'index.html#' + (row.blogPath || 'index.html')}" class="post-title">${post.PostName || 'Untitled'}</a>
+                    <a href="${'#' + (row.blogPath || '#')}" class="post-title">${post.PostName || 'Untitled'}</a>
                     <div class="author-date">
                         <p>Author: ${post.Author || 'Unknown'}</p>
                         <p>${initDate || 'Unknown'}</p>
