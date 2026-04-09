@@ -195,15 +195,15 @@ function renderContent(post, indexPage) {
 
   (post.Images || []).forEach((img) => {
     html += `
-    <div class="image-wrapper" style="left:${img.x}; top:${img.y}; width:${img.width}; max-width: calc(100% - ${img.x});">
-        <img src="${img.src}" style="width:100%; height: auto; display:block; object-fit: contain;" draggable="false">
+    <div class="image-wrapper" style="position:absolute; left:${img.x}; top:${img.y}; width:${img.width};">
+        <img src="${img.src}" style="width:100%; height:auto; display:block;" draggable="false">
     </div>
     `;
   });
 
   (post.Videos || []).forEach((v) => {
     html += `
-    <div class="image-wrapper" style="left:${v.x}; top:${v.y}; width:${v.width};">
+    <div class="image-wrapper" style="position:absolute; left:${v.x}; top:${v.y}; width:${v.width};">
         <iframe src="${v.src}" style="width:100%; aspect-ratio:16/9; border:none; display:block;"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen>
